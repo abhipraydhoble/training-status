@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CDEC Training Update</title>
+<title>CDEC Training Update Form</title>
 <style>
   body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
   .container { max-width: 900px; margin: auto; }
   .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
   h1 { color: #2c3e50; }
   label { display: block; margin-top: 10px; font-weight: bold; }
-  select, input[type="checkbox"] { margin-top: 5px; }
-  .topics-list { margin-left: 20px; margin-top: 10px; }
+  select, input, textarea { margin-top: 5px; padding: 5px; width: 100%; }
+  textarea { height: 100px; resize: vertical; }
+  .topics-list { margin-left: 20px; margin-top: 5px; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #fafafa; }
   button { margin-top: 15px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
 </style>
 </head>
@@ -20,8 +21,34 @@
 <div class="container">
   <h1>📚 CDEC Training Update Form</h1>
 
-  <!-- Module Selection -->
-  <label for="module">Select Module:</label>
+  <!-- Training Date -->
+  <label for="date">Training Date:</label>
+  <input type="date" id="date">
+
+  <!-- Instructor -->
+  <label>Instructor Name:</label>
+  <input type="text" id="instructor" value="Abhipray Dhoble" readonly>
+
+  <!-- Batch Name -->
+  <label for="batch">Batch Name:</label>
+  <select id="batch">
+    <option value="">-- Select Batch --</option>
+    <option value="CDEC-B56">CDEC-B56</option>
+    <option value="CDEC-B58">CDEC-B58</option>
+    <option value="CDEC-B60">CDEC-B60</option>
+    <option value="OnCDEC-B29">OnCDEC-B29</option>
+  </select>
+
+  <!-- Training Mode -->
+  <label for="mode">Training Mode:</label>
+  <select id="mode">
+    <option value="">-- Select Mode --</option>
+    <option value="Online">Online</option>
+    <option value="Offline">Offline</option>
+  </select>
+
+  <!-- Course Module -->
+  <label for="module">Course Module:</label>
   <select id="module" onchange="resetDayAndTopics()">
     <option value="">-- Select Module --</option>
     <option value="DevOps">DevOps</option>
@@ -29,17 +56,19 @@
     <option value="Linux">Linux</option>
   </select>
 
-  <!-- Day Selection -->
-  <label for="day">Select Training Day:</label>
-  <select id="day" onchange="resetTopics()">
+  <!-- Module Section -->
+  <label for="day">Module Section (Day):</label>
+  <select id="day" onchange="populateTopics()">
     <option value="">-- Select Day --</option>
   </select>
 
-  <!-- Topics Selection -->
+  <!-- Topics Covered -->
   <label>Topics Covered:</label>
-  <div id="topics" class="topics-list">
-    <!-- Empty: User will manually input topics or select checkboxes if added later -->
-  </div>
+  <div id="topics" class="topics-list"></div>
+
+  <!-- Attendance -->
+  <label for="attendance">Attendance:</label>
+  <input type="number" id="attendance" placeholder="e.g., 19/30">
 
   <!-- Generate Button -->
   <button onclick="generateUpdate()">Generate Training Update</button>
@@ -49,16 +78,49 @@
 </div>
 
 <script>
-// Populate day dropdown (1-50) dynamically
-window.addEventListener('DOMContentLoaded', () => {
-  const daySelect = document.getElementById('day');
-  for (let i = 1; i <= 50; i++) {
-    const option = document.createElement('option');
-    option.value = `Day ${i}`;
-    option.text = `Day ${i}`;
-    daySelect.appendChild(option);
+// ======= SYLLABUS DATA =======
+// Example for DevOps module. Repeat for AWS, Linux if needed
+const syllabus = {
+  "DevOps": {
+    "Day 1": [
+      "Introduction Software Industry",
+      "SDLC - Waterfall and Agile Model",
+      "Explain DevOps Syllabus",
+      "Introduction to API, its types, and use cases",
+      "What is Frontend vs backend",
+      "Stages of application development [developer/tester/db/devops teams]"
+    ],
+    "Day 2": [
+      "Introduction to SCM tool",
+      "Difference Between Centralise-VCS and Distributed-VCS",
+      "Introduction to GIT",
+      "Explain Lifecycle of GIT",
+      "GIT CLI installation",
+      "GIT Commands: git init, add, commit, logs, revert, restore, status"
+    ],
+    "Day 3": [
+      "git branch, common types of branches, checkout, diff, merge",
+      "Introduction to Remote Repo (GitHub)",
+      "git clone, pull, push commands"
+    ],
+    // Add Days 4–50 similarly
+  },
+  "AWS": {
+    // Add AWS syllabus here
+  },
+  "Linux": {
+    // Add Linux syllabus here
   }
-});
+};
+
+// Populate day dropdown 1-50
+const daySelect = document.getElementById('day');
+for (let i = 1; i <= 50; i++) {
+  const option = document.createElement('option');
+  option.value = `Day ${i}`;
+  option.text = `Day ${i}`;
+  daySelect.appendChild(option);
+}
 
 // Reset day and topics when module changes
 function resetDayAndTopics() {
@@ -67,51 +129,65 @@ function resetDayAndTopics() {
   document.getElementById('output').style.display = 'none';
 }
 
-// Reset topics when day changes
-function resetTopics() {
-  document.getElementById('topics').innerHTML = "";
-  document.getElementById('output').style.display = 'none';
-}
-
-// Generate training update card
-function generateUpdate() {
+// Populate topics checkboxes for selected module/day
+function populateTopics() {
   const module = document.getElementById('module').value;
   const day = document.getElementById('day').value;
-  const trainer = "Abhipray Dhoble";
-  const batch = "OnCDEC-b29";
-  const mode = "Online";
-  const date = new Date().toISOString().split('T')[0];
+  const topicsDiv = document.getElementById('topics');
+  topicsDiv.innerHTML = "";
+  document.getElementById('output').style.display = 'none';
 
-  if (!module) {
-    alert("Please select a module");
+  if (module && day && syllabus[module] && syllabus[module][day]) {
+    syllabus[module][day].forEach((topic, i) => {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = `topic${i}`;
+      checkbox.value = topic;
+
+      const label = document.createElement('label');
+      label.htmlFor = `topic${i}`;
+      label.innerText = topic;
+
+      topicsDiv.appendChild(checkbox);
+      topicsDiv.appendChild(label);
+      topicsDiv.appendChild(document.createElement('br'));
+    });
+  }
+}
+
+// Generate the training update card
+function generateUpdate() {
+  const date = document.getElementById('date').value;
+  const instructor = document.getElementById('instructor').value;
+  const batch = document.getElementById('batch').value;
+  const mode = document.getElementById('mode').value;
+  const module = document.getElementById('module').value;
+  const day = document.getElementById('day').value;
+  const attendance = document.getElementById('attendance').value;
+
+  // Collect selected topics
+  const topics = [];
+  document.querySelectorAll('#topics input[type="checkbox"]:checked').forEach(cb => topics.push(cb.value));
+
+  // Validation
+  if (!date || !batch || !mode || !module || !day || !attendance) {
+    alert("Please fill in all fields");
     return;
   }
 
-  if (!day) {
-    alert("Please select a day");
-    return;
-  }
-
-  // Get topics entered by user (optional: you can replace this with checkboxes if needed)
-  let topics = [];
-  document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => topics.push(cb.value));
-
-  // If no checkboxes, leave topics empty
   const topicsHTML = topics.length > 0 ? topics.map(t => `<li>${t}</li>`).join('') : "<li>No topics selected</li>";
 
   const html = `
     <h1>📚 CDEC Training Update</h1>
     <p>📅 <strong>Training date:</strong> ${date}</p>
-    <p>👨‍🏫 <strong>Instructor name:</strong> ${trainer}</p>
+    <p>👨‍🏫 <strong>Instructor name:</strong> ${instructor}</p>
     <p>👥 <strong>Batch name:</strong> ${batch}</p>
     <p>💻 <strong>Training mode:</strong> ${mode}</p>
     <p>📖 <strong>Course module:</strong> ${module}</p>
     <p>📑 <strong>Module section:</strong> ${day}</p>
-    <p>✅ <strong>Attendance:</strong> ${students}</p>
+    <p>✅ <strong>Attendance:</strong> ${attendance}</p>
     <h3>📋 Topics Covered:</h3>
-    <ul>
-      ${topicsHTML}
-    </ul>
+    <ul>${topicsHTML}</ul>
     <footer>_Generated by CDEC Training Management System_</footer>
   `;
 
