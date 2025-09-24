@@ -20,15 +20,26 @@
 <div class="container">
   <h1>📚 CDEC Training Update Form</h1>
 
+  <!-- Module Selection -->
+  <label for="module">Select Module:</label>
+  <select id="module" onchange="resetDayAndTopics()">
+    <option value="">-- Select Module --</option>
+    <option value="DevOps">DevOps</option>
+    <option value="AWS">AWS</option>
+    <option value="Linux">Linux</option>
+  </select>
+
   <!-- Day Selection -->
   <label for="day">Select Training Day:</label>
-  <select id="day" onchange="populateTopics()">
+  <select id="day" onchange="resetTopics()">
     <option value="">-- Select Day --</option>
   </select>
 
   <!-- Topics Selection -->
   <label>Topics Covered:</label>
-  <div id="topics" class="topics-list"></div>
+  <div id="topics" class="topics-list">
+    <!-- Empty: User will manually input topics or select checkboxes if added later -->
+  </div>
 
   <!-- Generate Button -->
   <button onclick="generateUpdate()">Generate Training Update</button>
@@ -37,98 +48,56 @@
   <div id="output" class="card" style="display:none;"></div>
 </div>
 
-<!-- Script -->
 <script>
-// Full syllabus: Day 1 to Day 50 (sample, continue for all days)
-const syllabus = {
-  "Day 1": [
-    "Introduction Software Industry",
-    "SDLC - Waterfall and Agile Model",
-    "Explain DevOps Syllabus",
-    "Introduction to API, its types, and use cases",
-    "What is Frontend vs backend",
-    "Stages of application development [developer/tester/db/devops teams]"
-  ],
-  "Day 2": [
-    "Introduction to SCM tool",
-    "Difference Between Centralise-VCS and Distributed-VCS",
-    "Introduction to GIT",
-    "Explain Lifecycle of GIT",
-    "GIT CLI instalation",
-    "GIT Command (work on local-repo)",
-    "git init, add, commit, logs, revert, restore, status"
-  ],
-  "Day 3": [
-    "git branch, common types of branches, checkout, diff, merge",
-    "Introduction to Remote Repo (GitHub)",
-    "git clone, pull, push commands",
-    "git init, config, remote"
-  ],
-  // … continue adding all days up to Day 50
-  "Day 50": [
-    "EXAM(ONLY SATURDAY)"
-  ]
-};
-
-// Populate day dropdown on page load
+// Populate day dropdown (1-50) dynamically
 window.addEventListener('DOMContentLoaded', () => {
   const daySelect = document.getElementById('day');
-  Object.keys(syllabus).forEach(day => {
+  for (let i = 1; i <= 50; i++) {
     const option = document.createElement('option');
-    option.value = day;
-    option.text = day;
+    option.value = `Day ${i}`;
+    option.text = `Day ${i}`;
     daySelect.appendChild(option);
-  });
+  }
 });
 
-// Populate topics checkboxes based on selected day
-function populateTopics() {
-  const day = document.getElementById('day').value;
-  const topicsDiv = document.getElementById('topics');
-  topicsDiv.innerHTML = ''; // Clear previous topics
-  document.getElementById('output').style.display = 'none'; // Hide previous card
-
-  if (day && syllabus[day]) {
-    syllabus[day].forEach((topic, i) => {
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.id = `topic${i}`;
-      checkbox.value = topic;
-
-      const label = document.createElement('label');
-      label.htmlFor = `topic${i}`;
-      label.innerText = topic;
-
-      topicsDiv.appendChild(checkbox);
-      topicsDiv.appendChild(label);
-      topicsDiv.appendChild(document.createElement('br'));
-    });
-  }
+// Reset day and topics when module changes
+function resetDayAndTopics() {
+  document.getElementById('day').value = "";
+  document.getElementById('topics').innerHTML = "";
+  document.getElementById('output').style.display = 'none';
 }
 
-// Generate the training update card
+// Reset topics when day changes
+function resetTopics() {
+  document.getElementById('topics').innerHTML = "";
+  document.getElementById('output').style.display = 'none';
+}
+
+// Generate training update card
 function generateUpdate() {
+  const module = document.getElementById('module').value;
+  const day = document.getElementById('day').value;
   const trainer = "Abhipray Dhoble";
   const batch = "OnCDEC-b29";
   const mode = "Online";
   const date = new Date().toISOString().split('T')[0];
-  const day = document.getElementById('day').value;
+
+  if (!module) {
+    alert("Please select a module");
+    return;
+  }
 
   if (!day) {
     alert("Please select a day");
     return;
   }
 
-  const module = day;
-
-  // Get selected topics
-  const topics = [];
+  // Get topics entered by user (optional: you can replace this with checkboxes if needed)
+  let topics = [];
   document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => topics.push(cb.value));
 
-  if (topics.length === 0) {
-    alert("Select at least one topic");
-    return;
-  }
+  // If no checkboxes, leave topics empty
+  const topicsHTML = topics.length > 0 ? topics.map(t => `<li>${t}</li>`).join('') : "<li>No topics selected</li>";
 
   const html = `
     <h1>📚 CDEC Training Update</h1>
@@ -138,13 +107,11 @@ function generateUpdate() {
     <p>💻 <strong>Training mode:</strong> ${mode}</p>
     <p>📖 <strong>Course module:</strong> ${module}</p>
     <p>📑 <strong>Module section:</strong> ${day}</p>
-    <p>✅ <strong>Attendance:</strong> 19/30 students</p>
-
+    <p>✅ <strong>Attendance:</strong> ${students}</p>
     <h3>📋 Topics Covered:</h3>
     <ul>
-      ${topics.map(t => `<li>${t}</li>`).join('')}
+      ${topicsHTML}
     </ul>
-
     <footer>_Generated by CDEC Training Management System_</footer>
   `;
 
